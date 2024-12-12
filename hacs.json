@@ -1,0 +1,7 @@
+{
+    "name": "Full Automation Climate",
+    "render_readme": true,
+    "homeassistant": "2023.12.0",
+    "hacs": "1.6.0",
+    "appdaemon": true
+}
