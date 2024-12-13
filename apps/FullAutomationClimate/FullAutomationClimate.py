@@ -44,28 +44,6 @@ climate_automation:
       off_heating_setpoint: 7  # Optional: Temperature in °C
 ```
 
-Technical Details:
------------------
-The module implements a hierarchical configuration system:
-1. Local entity values take precedence
-2. Local fixed values are used if no entity exists
-3. Global values are used as fallback
-4. Default constants are used if no other values are available
-
-The system supports:
-- Multiple climate units with independent configurations
-- Automatic mode switching based on occupancy
-- Temperature adjustments based on external conditions
-- Configurable delays to prevent rapid switching
-- Extensive error handling and logging
-
-Error Handling:
---------------
-- All entity interactions are wrapped in try-except blocks
-- Invalid configurations are logged with detailed error messages
-- Missing entities are gracefully handled with fallback values
-- Temperature conversion errors are caught and logged
-
 Author: @gnol86
 License: MIT
 Repository: https://github.com/Gnol86/FullAutomationClimate
@@ -129,14 +107,25 @@ class ClimateUnit:
         self.is_open = False
         self.external_temp = None
         
+        self.hass.debug_log(f"Initialized climate unit: {self.entity_id}")
+        if self.occupancy_entity:
+            self.hass.debug_log(f"  Occupancy entity: {self.occupancy_entity}")
+        if self.opening_entity:
+            self.hass.debug_log(f"  Opening entity: {self.opening_entity}")
+        if self.external_temp_entity:
+            self.hass.debug_log(f"  External temperature entity: {self.external_temp_entity}")
+        
     def update_temperature(self, temp: float) -> None:
         """Update the temperature setpoint based on current conditions."""
         try:
+            self.hass.debug_log(f"Updating temperature for {self.entity_id}")
             if self.is_open:
+                self.hass.debug_log(f"  Opening detected, setting to off temperature: {self.off_heating_setpoint}")
                 self.hass.call_service("climate/set_temperature", entity_id=self.entity_id, temperature=self.off_heating_setpoint)
             else:
                 target_temp = self.get_target_temperature()
                 if target_temp is not None:
+                    self.hass.debug_log(f"  Setting temperature to: {target_temp}")
                     self.hass.call_service("climate/set_temperature", entity_id=self.entity_id, temperature=target_temp)
         except Exception as e:
             self.hass.error(f"Error updating temperature for {self.entity_id}: {str(e)}")
@@ -144,8 +133,12 @@ class ClimateUnit:
     def get_target_temperature(self) -> Optional[float]:
         """Calculate the target temperature based on occupancy and other conditions."""
         if self.is_occupied:
-            return self.hass.get_state(self.occupied_heating_setpoint_entity)
-        return self.hass.get_state(self.away_heating_setpoint_entity)
+            temp = self.hass.get_state(self.occupied_heating_setpoint_entity)
+            self.hass.debug_log(f"  Room occupied, target temperature: {temp}")
+            return temp
+        temp = self.hass.get_state(self.away_heating_setpoint_entity)
+        self.hass.debug_log(f"  Room unoccupied, target temperature: {temp}")
+        return temp
 
 class FullAutomationClimate(hass.Hass):
     """
@@ -154,10 +147,20 @@ class FullAutomationClimate(hass.Hass):
     def initialize(self) -> None:
         """Initialize the climate automation system."""
         try:
+            self.log("#----------------------------#")
+            self.log("|  Full Automation Climate   |")
+            self.log("#----------------------------#")
+            self.log("")
+            
             self.debug_mode = bool(self.args.get('debug', False))
             self.outdoor_temp_entity = self.args.get('outdoor_temperature_entity')
             self.outdoor_temp_limit = float(self.args.get('outdoor_temperature_limit', ClimateConstants.DEFAULT_TEMPERATURES['HEATING_LIMIT']))
             self.off_heating_setpoint_entity = self.args.get('off_heating_setpoint_entity')
+            
+            self.debug_log("Initializing climate automation system")
+            if self.outdoor_temp_entity:
+                self.debug_log(f"Outdoor temperature entity: {self.outdoor_temp_entity}")
+            self.debug_log(f"Outdoor temperature limit: {self.outdoor_temp_limit}")
             
             # Initialize climate units
             self.climate_units = []
@@ -168,22 +171,29 @@ class FullAutomationClimate(hass.Hass):
             # Set up listeners
             self._setup_listeners()
             
+            self.log("Successfully initialized")
+            
         except Exception as e:
             self.error(f"Error initializing FullAutomationClimate: {str(e)}\n{traceback.format_exc()}")
             
     def _setup_listeners(self) -> None:
         """Set up event listeners for all monitored entities."""
         try:
+            self.debug_log("Setting up event listeners")
             if self.outdoor_temp_entity:
                 self.listen_state(self.handle_outdoor_temp_change, self.outdoor_temp_entity)
+                self.debug_log(f"  Added listener for outdoor temperature: {self.outdoor_temp_entity}")
                 
             for unit in self.climate_units:
                 if unit.occupancy_entity:
                     self.listen_state(self.handle_occupancy_change, unit.occupancy_entity)
+                    self.debug_log(f"  Added occupancy listener for: {unit.occupancy_entity}")
                 if unit.opening_entity:
                     self.listen_state(self.handle_opening_change, unit.opening_entity)
+                    self.debug_log(f"  Added opening listener for: {unit.opening_entity}")
                 if unit.external_temp_entity:
                     self.listen_state(self.handle_external_temp_change, unit.external_temp_entity)
+                    self.debug_log(f"  Added external temperature listener for: {unit.external_temp_entity}")
                     
         except Exception as e:
             self.error(f"Error setting up listeners: {str(e)}")
@@ -191,6 +201,7 @@ class FullAutomationClimate(hass.Hass):
     def handle_outdoor_temp_change(self, entity: str, attribute: Any, old: str, new: str, kwargs: Dict[str, Any]) -> None:
         """Handle changes in outdoor temperature."""
         try:
+            self.debug_log(f"Outdoor temperature changed: {new}")
             if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
                 self.update_all_units()
         except Exception as e:
@@ -199,9 +210,11 @@ class FullAutomationClimate(hass.Hass):
     def handle_occupancy_change(self, entity: str, attribute: Any, old: str, new: str, kwargs: Dict[str, Any]) -> None:
         """Handle changes in occupancy status."""
         try:
+            self.debug_log(f"Occupancy changed for {entity}: {new}")
             for unit in self.climate_units:
                 if unit.occupancy_entity == entity:
                     unit.is_occupied = new in [EntityState.ON.value, EntityState.HOME.value, EntityState.TRUE.value, EntityState.TRUE_BOOL.value]
+                    self.debug_log(f"  Updating {unit.entity_id}, occupied: {unit.is_occupied}")
                     unit.update_temperature(self.get_current_temp(unit))
         except Exception as e:
             self.error(f"Error handling occupancy change: {str(e)}")
@@ -209,9 +222,11 @@ class FullAutomationClimate(hass.Hass):
     def handle_opening_change(self, entity: str, attribute: Any, old: str, new: str, kwargs: Dict[str, Any]) -> None:
         """Handle changes in opening status (windows/doors)."""
         try:
+            self.debug_log(f"Opening status changed for {entity}: {new}")
             for unit in self.climate_units:
                 if unit.opening_entity == entity:
                     unit.is_open = new == EntityState.ON.value
+                    self.debug_log(f"  Updating {unit.entity_id}, open: {unit.is_open}")
                     unit.update_temperature(self.get_current_temp(unit))
         except Exception as e:
             self.error(f"Error handling opening change: {str(e)}")
@@ -219,9 +234,11 @@ class FullAutomationClimate(hass.Hass):
     def handle_external_temp_change(self, entity: str, attribute: Any, old: str, new: str, kwargs: Dict[str, Any]) -> None:
         """Handle changes in external temperature sensors."""
         try:
+            self.debug_log(f"External temperature changed for {entity}: {new}")
             for unit in self.climate_units:
                 if unit.external_temp_entity == entity:
                     unit.external_temp = float(new) if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value] else None
+                    self.debug_log(f"  Updating {unit.entity_id}, external temperature: {unit.external_temp}")
                     if unit.external_temp_input:
                         self.set_value(unit.external_temp_input, unit.external_temp)
         except Exception as e:
@@ -230,6 +247,7 @@ class FullAutomationClimate(hass.Hass):
     def update_all_units(self) -> None:
         """Update all climate units."""
         try:
+            self.debug_log("Updating all climate units")
             for unit in self.climate_units:
                 unit.update_temperature(self.get_current_temp(unit))
         except Exception as e:
@@ -241,7 +259,17 @@ class FullAutomationClimate(hass.Hass):
             if unit.external_temp_entity:
                 temp_state = self.get_state(unit.external_temp_entity)
                 if temp_state not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
+                    self.debug_log(f"Current temperature for {unit.entity_id}: {temp_state}")
                     return float(temp_state)
         except Exception as e:
             self.error(f"Error getting current temperature: {str(e)}")
         return None
+
+    def debug_log(self, message: str) -> None:
+        """Log a debug message if debug mode is enabled."""
+        if self.debug_mode:
+            self.log(message)
+
+    def error(self, message: str) -> None:
+        """Log an error message."""
+        self.log(message, level="ERROR")
