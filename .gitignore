@@ -1,5 +1,5 @@
 # Configuration files
-config.yaml
+apps.yaml
 
 # Python
 __pycache__/
