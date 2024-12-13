@@ -173,7 +173,7 @@ class FullAutomationClimate(hass.Hass):
                     temp_state = self.get_state(unit.external_temp_entity)
                     if temp_state not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
                         self.set_value(unit.external_temp_input, float(temp_state))
-                        self.debug_log(f"########## Initialized external temperature input {unit.external_temp_input} with value {temp_state}")
+                        self.debug_log(f" Initialized external temperature input {unit.external_temp_input} with value {temp_state}")
                 
             # Set up listeners
             self._setup_listeners()
