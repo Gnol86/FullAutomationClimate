@@ -690,20 +690,20 @@ class FullAutomationClimate(hass.Hass):
             self.error(f"Error while configuring openings: {str(e)}")
 
     def _setup_temperature(self, climate: Dict[str, Any], climate_index: int) -> None:
-        """Configure la température externe pour un climatiseur."""
-        # Vérification de la présence de external_temperature_entity
+        """Configure external temperature for a climate unit."""
+        # Check if external_temperature_entity exists
         has_external_temp = 'external_temperature_entity' in climate
         has_external_input = 'external_temperature_input' in climate
 
         if not has_external_temp:
             return
 
-        # Validation de l'existence de l'entité de température externe
+        # Validate existence of external temperature entity
         if not self.entity_exists(climate['external_temperature_entity']):
             self.error(f"External temperature entity {climate['external_temperature_entity']} does not exist")
             return
 
-        # Pour les entités de type climate uniquement
+        # For climate entities only
         if climate['climate_entity'].startswith('climate.'):
             if not has_external_input:
                 self.error(f"external_temperature_input must be defined for climate entities: {climate['climate_entity']} if external_temperature_entity is defined")
@@ -711,27 +711,15 @@ class FullAutomationClimate(hass.Hass):
             if not self.entity_exists(climate['external_temperature_input']):
                 self.error(f"Entity external_temperature_input {climate['external_temperature_input']} does not exist")
                 return
-            
-            # Initialisation de la valeur de température externe
-            try:
-                current_temp = self.get_state(climate['external_temperature_entity'])
-                if current_temp not in ['unknown', 'unavailable', None]:
-                    temp_value = float(current_temp)
-                    self.call_service("number/set_value", 
-                                    entity_id=climate['external_temperature_input'], 
-                                    value=temp_value)
-                    self.debug_log(f"Initial external temperature set to {temp_value} for {climate['external_temperature_input']}")
-            except Exception as e:
-                self.error(f"Error setting initial external temperature for {climate['climate_entity']}: {str(e)}")
-            
+
         self.debug_log(f"  Init external temperature : {climate['external_temperature_entity']}")
         try:
-            # Configuration de l'écouteur d'état
+            # Configure state listener
             self.listen_state(self.callback_external_temperature, 
                             climate['external_temperature_entity'], 
                             climate_index=climate_index)
             
-            # Appel initial avec la température actuelle
+            # Initialize with current temperature
             current_temp = self.get_state(climate['external_temperature_entity'])
             if current_temp not in ['unknown', 'unavailable', None]:
                 self.callback_external_temperature(
