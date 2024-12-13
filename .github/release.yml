@@ -5,7 +5,7 @@ changelog:
         labels:
             - ignore-for-release
         authors:
-            - octocat
+            - Gnol86
     categories:
         - title: Breaking Changes 🛠
           labels:
