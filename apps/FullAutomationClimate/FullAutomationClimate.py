@@ -712,6 +712,18 @@ class FullAutomationClimate(hass.Hass):
                 self.error(f"Entity external_temperature_input {climate['external_temperature_input']} does not exist")
                 return
             
+            # Initialisation de la valeur de température externe
+            try:
+                current_temp = self.get_state(climate['external_temperature_entity'])
+                if current_temp not in ['unknown', 'unavailable', None]:
+                    temp_value = float(current_temp)
+                    self.call_service("number/set_value", 
+                                    entity_id=climate['external_temperature_input'], 
+                                    value=temp_value)
+                    self.debug_log(f"Initial external temperature set to {temp_value} for {climate['external_temperature_input']}")
+            except Exception as e:
+                self.error(f"Error setting initial external temperature for {climate['climate_entity']}: {str(e)}")
+            
         self.debug_log(f"  Init external temperature : {climate['external_temperature_entity']}")
         try:
             # Configuration de l'écouteur d'état
