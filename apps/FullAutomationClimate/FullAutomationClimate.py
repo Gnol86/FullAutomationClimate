@@ -71,7 +71,7 @@ License: MIT
 Repository: https://github.com/Gnol86/FullAutomationClimate
 """
 
-import appdaemon.plugins.hass.hassapi as hass
+import appdaemon.plugins.hass.hassapi as hass # type: ignore
 import traceback
 from typing import Optional, Dict, List, Any, Union, TypedDict
 from enum import Enum, auto
@@ -781,6 +781,7 @@ class FullAutomationClimate(hass.Hass):
                 self.call_service("number/set_value", 
                                 entity_id=climate['external_temperature_input'], 
                                 value=temp_value)
+                self.debug_log(f"Setting external temperature to {temp_value} for {climate['external_temperature_input']}")
             except ValueError:
                 self.error(f"Unable to convert temperature {new} to number for {climate_entity}")
             except Exception as e:
