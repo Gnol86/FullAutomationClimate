@@ -767,10 +767,6 @@ class FullAutomationClimate(hass.Hass):
         
         if not climate_entity.startswith('climate.'):
             return
-            
-    
-        
-        self.debug_log(f"Setting external temperature to {new} for {climate_entity}")
         
         if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
             try:
