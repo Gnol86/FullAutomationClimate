@@ -768,10 +768,7 @@ class FullAutomationClimate(hass.Hass):
         if not climate_entity.startswith('climate.'):
             return
             
-        if self.get_state(climate_entity, attribute='sensor') != 'external':
-            entity_id = 'select.' + climate_entity.split('.')[1] + '_sensor'
-            self.log(f"Setting sensor to external for {climate_entity}")
-            self.call_service("select/select_option", entity_id=entity_id, option='external')
+    
         
         self.debug_log(f"Setting external temperature to {new} for {climate_entity}")
         
