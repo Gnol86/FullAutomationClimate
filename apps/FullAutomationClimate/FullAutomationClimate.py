@@ -168,6 +168,13 @@ class FullAutomationClimate(hass.Hass):
                 unit = ClimateUnit(self, climate_config)
                 self.climate_units.append(unit)
                 
+                # Initialize external temperature inputs
+                if unit.external_temp_entity and unit.external_temp_input:
+                    temp_state = self.get_state(unit.external_temp_entity)
+                    if temp_state not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
+                        self.set_value(unit.external_temp_input, float(temp_state))
+                        self.debug_log(f"Initialized external temperature input {unit.external_temp_input} with value {temp_state}")
+                
             # Set up listeners
             self._setup_listeners()
             
@@ -239,8 +246,10 @@ class FullAutomationClimate(hass.Hass):
                 if unit.external_temp_entity == entity:
                     unit.external_temp = float(new) if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value] else None
                     self.debug_log(f"  Updating {unit.entity_id}, external temperature: {unit.external_temp}")
-                    if unit.external_temp_input:
+                    if unit.external_temp_input and not kwargs.get('from_input'):
                         self.set_value(unit.external_temp_input, unit.external_temp)
+                        self.debug_log(f"  Set external temperature input: {unit.external_temp_input} to {unit.external_temp}")
+                    unit.update_temperature(self.get_current_temp(unit))
         except Exception as e:
             self.error(f"Error handling external temperature change: {str(e)}")
             
