@@ -117,6 +117,7 @@ climates:
 | `off_heating_setpoint`        | number  | No       | `7`        | Global frost protection temperature (°C)       |
 | `preset_mode`                 | string  | No       | `"manual"` | Default preset mode for climate entities       |
 | `hvac_mode`                   | string  | No       | `"heat"`   | Default HVAC mode for climate entities         |
+| `climates`                    | list    | Yes      | -          | List of climate units to control               |
 
 #### Per Climate Unit Parameters
 
