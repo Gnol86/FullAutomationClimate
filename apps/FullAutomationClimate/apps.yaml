@@ -1,6 +1,0 @@
-# Example configuration for Full Automation Climate
-full_automation_climate:
-    module: FullAutomationClimate
-    class: FullAutomationClimate
-    climate_entity: climate.your_climate_entity
-    # Add your configuration parameters here

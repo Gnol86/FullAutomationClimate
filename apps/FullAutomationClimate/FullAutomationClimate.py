@@ -1,5 +1,5 @@
 """
-FullAutomationClimates - Automated Climate Control for Home Assistant
+FullAutomationClimate - Automated Climate Control for Home Assistant
 ==================================================================
 
 This module provides automated climate control functionality for Home Assistant,
@@ -26,8 +26,8 @@ Configuration:
 Example configuration in apps.yaml:
 ```yaml
 climate_automation:
-  module: FullAutomationClimates
-  class: FullAutomationClimates
+  module: FullAutomationClimate
+  class: FullAutomationClimate
   debug: false  # Optional: Enable debug logging
   climates:
     - climate_entity: climate.living_room
@@ -68,7 +68,7 @@ Error Handling:
 
 Author: @gnol86
 License: MIT
-Repository: https://github.com/Gnol86/FullAutomationClimates
+Repository: https://github.com/Gnol86/FullAutomationClimate
 """
 
 import appdaemon.plugins.hass.hassapi as hass
@@ -339,7 +339,7 @@ class ClimateConfiguration:
         self.occupancy_entity = config_dict.get('occupancy_entity')
         # etc...
 
-class FullAutomationClimates(hass.Hass):
+class FullAutomationClimate(hass.Hass):
     """
     Main class managing climate automation.
     Inherits from AppDaemon's Hass class to interact with Home Assistant.
