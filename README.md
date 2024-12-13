@@ -34,6 +34,17 @@ An advanced AppDaemon script for Home Assistant that provides intelligent and au
 
 ## Configuration
 
+### Minimal Configuration
+
+```yaml
+FullAutomationClimate:
+    module: FullAutomationClimate
+    class: FullAutomationClimate
+    climates:
+        - climate_entity: climate.living_room
+          occupancy_entity: binary_sensor.living_room_presence
+```
+
 ### Basic Configuration Example
 
 ```yaml
