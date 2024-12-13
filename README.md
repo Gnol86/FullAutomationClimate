@@ -169,14 +169,28 @@ Operating modes are determined in the following order:
 2. Global mode setting
 3. Default mode constants
 
-## Operation
+## Climate vs Switch Entities
 
-The system operates based on the following hierarchy:
+The automation system supports two types of heating control entities:
 
-1. Window/Door Status: Takes precedence (turns off when open)
-2. Occupancy Status: Determines temperature setpoint (occupied/away)
-3. External Temperature: Considers heating limits
-4. Temperature Setpoints: Uses local > global > default values
+### Climate Entities
+
+Climate entities (`climate.*`) are sophisticated heating control devices that support:
+
+-   External temperature input
+-   Fine-grained temperature control
+
+### Switch Entities
+
+Switch entities (any non-climate entity like `switch.*`) are simple on/off devices that:
+
+-   Only support binary control (on/off)
+-   Turn on when:
+    -   Room is occupied
+    -   No openings detected
+    -   External temperature is below heating limit
+-   Turn off when any of these conditions are not met
+-   Do not support temperature setpoints or operating modes
 
 ## Support
 
