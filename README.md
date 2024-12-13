@@ -34,104 +34,110 @@ An advanced AppDaemon script for Home Assistant that provides intelligent and au
 
 ## Configuration
 
-### Basic Configuration
+### Basic Configuration Example
 
 ```yaml
 FullAutomationClimate:
     module: FullAutomationClimate
     class: FullAutomationClimate
-    debug: true # Optional: Enable detailed logging
+    debug: true
 
     # Global Temperature Settings
-    outdoor_temperature_entity: sensor.your_outdoor_temp # Optional
-    outdoor_temperature_limit: 19 # Optional: Global heating limit
-    off_heating_setpoint_entity: input_number.global_off_heating_setpoint # Optional
-    occupied_heating_setpoint: 21 # Optional: Global occupied temperature
-    away_heating_setpoint: 17 # Optional: Global away temperature
-    off_heating_setpoint: 7 # Optional: Global frost protection temperature
+    outdoor_temperature_entity: sensor.your_outdoor_temp
+    outdoor_temperature_limit: 19
+    off_heating_setpoint_entity: input_number.global_off_heating_setpoint
+    occupied_heating_setpoint: 21
+    away_heating_setpoint: 17
+    off_heating_setpoint: 7
 
     # Global Mode Settings
-    preset_mode: "manual" # Optional: Default preset mode
-    hvac_mode: "heat" # Optional: Default HVAC mode
+    preset_mode: "manual"
+    hvac_mode: "heat"
 
     # Climate Units Configuration
     climates:
         - climate_entity: climate.living_room
-          # ... climate unit configuration (see below)
+          # ... climate unit configuration
 ```
 
-### Climate Unit Configuration
-
-Each climate unit supports the following parameters:
+### Climate Unit Configuration Example
 
 ```yaml
 climates:
-    - climate_entity: climate.living_room # Required: Climate entity or switch
+    - climate_entity: climate.living_room
 
       # Temperature Settings
-      external_temperature_entity: sensor.living_room_temp # Optional: Room temperature sensor
-      external_temperature_input: number.living_room_temp_input # Required if using external_temperature_entity with climate entities
-      heating_limit_entity: input_number.living_room_heating_limit # Optional: Individual heating limit
-      occupied_heating_setpoint_entity: input_number.living_room_occupied_temp # Optional
-      away_heating_setpoint_entity: input_number.living_room_away_temp # Optional
-      occupied_heating_setpoint: 21 # Optional: Fixed occupied temperature
-      away_heating_setpoint: 17 # Optional: Fixed away temperature
-      off_heating_setpoint: 7 # Optional: Fixed frost protection temperature
+      external_temperature_entity: sensor.living_room_temp
+      external_temperature_input: number.living_room_temp_input
+      heating_limit_entity: input_number.living_room_heating_limit
+      occupied_heating_setpoint_entity: input_number.living_room_occupied_temp
+      away_heating_setpoint_entity: input_number.living_room_away_temp
+      occupied_heating_setpoint: 21
+      away_heating_setpoint: 17
+      off_heating_setpoint: 7
 
       # Sensors
-      occupancy_entity: binary_sensor.living_room_presence # Optional
-      opening_entity: binary_sensor.living_room_window # Optional
+      occupancy_entity: binary_sensor.living_room_presence
+      opening_entity: binary_sensor.living_room_window
 
-      # Delays (in seconds)
-      to_occupied_delay: 10 # Optional: Delay before switching to occupied mode
-      to_inoccupied_delay: 10 # Optional: Delay before switching to unoccupied mode
-      opening_delay_open: 300 # Optional: Delay after opening detection
-      opening_delay_close: 15 # Optional: Delay after closing detection
+      # Delays
+      to_occupied_delay: 10
+      to_inoccupied_delay: 10
+      opening_delay_open: 300
+      opening_delay_close: 15
 
-      # Mode Settings (override global settings)
-      preset_mode: "manual" # Optional: Override global preset mode
-      hvac_mode: "heat" # Optional: Override global HVAC mode
+      # Mode Settings
+      preset_mode: "manual"
+      hvac_mode: "heat"
 ```
 
 ### Configuration Parameters
 
 #### Global Parameters
 
--   `debug`: Enable detailed logging (default: false)
--   `outdoor_temperature_entity`: Entity for outdoor temperature
--   `outdoor_temperature_limit`: Global temperature limit for heating (default: 19°C)
--   `off_heating_setpoint_entity`: Entity for global frost protection temperature
--   `occupied_heating_setpoint`: Global occupied temperature setpoint (default: 19°C)
--   `away_heating_setpoint`: Global away temperature setpoint (default: 17°C)
--   `off_heating_setpoint`: Global frost protection temperature (default: 7°C)
--   `preset_mode`: Default preset mode for climate entities (default: "manual")
--   `hvac_mode`: Default HVAC mode for climate entities (default: "heat")
+| Parameter                     | Type    | Required | Default    | Description                                    |
+| ----------------------------- | ------- | -------- | ---------- | ---------------------------------------------- |
+| `debug`                       | boolean | No       | `false`    | Enable detailed logging                        |
+| `outdoor_temperature_entity`  | string  | No       | -          | Entity for outdoor temperature                 |
+| `outdoor_temperature_limit`   | number  | No       | `19`       | Global heating limit temperature (°C)          |
+| `off_heating_setpoint_entity` | string  | No       | -          | Entity for global frost protection temperature |
+| `occupied_heating_setpoint`   | number  | No       | `19`       | Global occupied temperature setpoint (°C)      |
+| `away_heating_setpoint`       | number  | No       | `17`       | Global away temperature setpoint (°C)          |
+| `off_heating_setpoint`        | number  | No       | `7`        | Global frost protection temperature (°C)       |
+| `preset_mode`                 | string  | No       | `"manual"` | Default preset mode for climate entities       |
+| `hvac_mode`                   | string  | No       | `"heat"`   | Default HVAC mode for climate entities         |
 
 #### Per Climate Unit Parameters
 
--   `climate_entity`: Your climate or switch entity (required)
--   `external_temperature_entity`: Temperature sensor for the room
--   `external_temperature_input`: Input entity for external temperature (required for climate entities when using external_temperature_entity)
--   `heating_limit_entity`: Individual heating limit entity
--   `occupied_heating_setpoint_entity`: Entity for occupied temperature setpoint
--   `away_heating_setpoint_entity`: Entity for away temperature setpoint
--   `occupancy_entity`: Presence detection sensor
--   `opening_entity`: Window/door sensor
--   `preset_mode`: Override global preset mode
--   `hvac_mode`: Override global HVAC mode
+| Parameter                          | Type   | Required  | Default        | Description                                                                                                   |
+| ---------------------------------- | ------ | --------- | -------------- | ------------------------------------------------------------------------------------------------------------- |
+| `climate_entity`                   | string | Yes       | -              | Climate entity or switch to control                                                                           |
+| `external_temperature_entity`      | string | No        | -              | Temperature sensor for the room                                                                               |
+| `external_temperature_input`       | string | Special\* | -              | Input entity for external temperature (\*Required if using external_temperature_entity with climate entities) |
+| `heating_limit_entity`             | string | No        | -              | Individual heating limit entity                                                                               |
+| `occupied_heating_setpoint_entity` | string | No        | -              | Entity for occupied temperature setpoint                                                                      |
+| `away_heating_setpoint_entity`     | string | No        | -              | Entity for away temperature setpoint                                                                          |
+| `occupancy_entity`                 | string | No        | -              | Presence detection sensor                                                                                     |
+| `opening_entity`                   | string | No        | -              | Window/door sensor                                                                                            |
+| `preset_mode`                      | string | No        | Global setting | Override global preset mode                                                                                   |
+| `hvac_mode`                        | string | No        | Global setting | Override global HVAC mode                                                                                     |
 
-#### Fixed Temperature Values
+#### Fixed Temperature Values (Per Climate Unit)
 
--   `occupied_heating_setpoint`: Fixed occupied temperature (per climate unit)
--   `away_heating_setpoint`: Fixed away temperature (per climate unit)
--   `off_heating_setpoint`: Fixed frost protection temperature (per climate unit)
+| Parameter                   | Type   | Required | Default | Description                        |
+| --------------------------- | ------ | -------- | ------- | ---------------------------------- |
+| `occupied_heating_setpoint` | number | No       | `19`    | Fixed occupied temperature         |
+| `away_heating_setpoint`     | number | No       | `17`    | Fixed away temperature             |
+| `off_heating_setpoint`      | number | No       | `7`     | Fixed frost protection temperature |
 
-#### Delay Parameters (in seconds)
+#### Delay Parameters (Per Climate Unit)
 
--   `to_occupied_delay`: Delay before switching to occupied mode (default: 10s)
--   `to_inoccupied_delay`: Delay before switching to unoccupied mode (default: 10s)
--   `opening_delay_open`: Delay after opening detection (default: 300s)
--   `opening_delay_close`: Delay after closing detection (default: 15s)
+| Parameter             | Type   | Required | Default | Description                                         |
+| --------------------- | ------ | -------- | ------- | --------------------------------------------------- |
+| `to_occupied_delay`   | number | No       | `10`    | Delay before switching to occupied mode (seconds)   |
+| `to_inoccupied_delay` | number | No       | `10`    | Delay before switching to unoccupied mode (seconds) |
+| `opening_delay_open`  | number | No       | `300`   | Delay after opening detection (seconds)             |
+| `opening_delay_close` | number | No       | `15`    | Delay after closing detection (seconds)             |
 
 ### Temperature Hierarchy
 
