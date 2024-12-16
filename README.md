@@ -63,10 +63,6 @@ FullAutomationClimate:
     away_heating_setpoint: 17
     off_heating_setpoint: 7
 
-    # Global Mode Settings
-    preset_mode: "manual"
-    hvac_mode: "heat"
-
     # Climate Units Configuration
     climates:
         - climate_entity: climate.living_room
@@ -98,43 +94,35 @@ climates:
       to_inoccupied_delay: 10
       opening_delay_open: 300
       opening_delay_close: 15
-
-      # Mode Settings
-      preset_mode: "manual"
-      hvac_mode: "heat"
 ```
 
 ### Configuration Parameters
 
 #### Global Parameters
 
-| Parameter                     | Type    | Required | Default    | Description                                    |
-| ----------------------------- | ------- | -------- | ---------- | ---------------------------------------------- |
-| `debug`                       | boolean | No       | `false`    | Enable detailed logging                        |
-| `outdoor_temperature_entity`  | string  | No       | -          | Entity for outdoor temperature                 |
-| `outdoor_temperature_limit`   | number  | No       | `19`       | Global heating limit temperature (°C)          |
-| `off_heating_setpoint_entity` | string  | No       | -          | Entity for global frost protection temperature |
-| `occupied_heating_setpoint`   | number  | No       | `19`       | Global occupied temperature setpoint (°C)      |
-| `away_heating_setpoint`       | number  | No       | `17`       | Global away temperature setpoint (°C)          |
-| `off_heating_setpoint`        | number  | No       | `7`        | Global frost protection temperature (°C)       |
-| `preset_mode`                 | string  | No       | `"manual"` | Default preset mode for climate entities       |
-| `hvac_mode`                   | string  | No       | `"heat"`   | Default HVAC mode for climate entities         |
-| `climates`                    | list    | Yes      | -          | List of climate units to control               |
+| Parameter                     | Type    | Required | Default | Description                                    |
+| ----------------------------- | ------- | -------- | ------- | ---------------------------------------------- |
+| `debug`                       | boolean | No       | `false` | Enable detailed logging                        |
+| `outdoor_temperature_entity`  | string  | No       | -       | Entity for outdoor temperature                 |
+| `outdoor_temperature_limit`   | number  | No       | `19`    | Global heating limit temperature (°C)          |
+| `off_heating_setpoint_entity` | string  | No       | -       | Entity for global frost protection temperature |
+| `occupied_heating_setpoint`   | number  | No       | `19`    | Global occupied temperature setpoint (°C)      |
+| `away_heating_setpoint`       | number  | No       | `17`    | Global away temperature setpoint (°C)          |
+| `off_heating_setpoint`        | number  | No       | `7`     | Global frost protection temperature (°C)       |
+| `climates`                    | list    | Yes      | -       | List of climate units to control               |
 
 #### Per Climate Unit Parameters
 
-| Parameter                          | Type   | Required  | Default        | Description                                                                                                   |
-| ---------------------------------- | ------ | --------- | -------------- | ------------------------------------------------------------------------------------------------------------- |
-| `climate_entity`                   | string | Yes       | -              | Climate entity or switch to control                                                                           |
-| `external_temperature_entity`      | string | No        | -              | Temperature sensor for the room                                                                               |
-| `external_temperature_input`       | string | Special\* | -              | Input entity for external temperature (\*Required if using external_temperature_entity with climate entities) |
-| `heating_limit_entity`             | string | No        | -              | Individual heating limit entity                                                                               |
-| `occupied_heating_setpoint_entity` | string | No        | -              | Entity for occupied temperature setpoint                                                                      |
-| `away_heating_setpoint_entity`     | string | No        | -              | Entity for away temperature setpoint                                                                          |
-| `occupancy_entity`                 | string | No        | -              | Presence detection sensor                                                                                     |
-| `opening_entity`                   | string | No        | -              | Window/door sensor                                                                                            |
-| `preset_mode`                      | string | No        | Global setting | Override global preset mode                                                                                   |
-| `hvac_mode`                        | string | No        | Global setting | Override global HVAC mode                                                                                     |
+| Parameter                          | Type   | Required  | Default | Description                                                                                                   |
+| ---------------------------------- | ------ | --------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `climate_entity`                   | string | Yes       | -       | Climate entity or switch to control                                                                           |
+| `external_temperature_entity`      | string | No        | -       | Temperature sensor for the room                                                                               |
+| `external_temperature_input`       | string | Special\* | -       | Input entity for external temperature (\*Required if using external_temperature_entity with climate entities) |
+| `heating_limit_entity`             | string | No        | -       | Individual heating limit entity                                                                               |
+| `occupied_heating_setpoint_entity` | string | No        | -       | Entity for occupied temperature setpoint                                                                      |
+| `away_heating_setpoint_entity`     | string | No        | -       | Entity for away temperature setpoint                                                                          |
+| `occupancy_entity`                 | string | No        | -       | Presence detection sensor                                                                                     |
+| `opening_entity`                   | string | No        | -       | Window/door sensor                                                                                            |
 
 #### Fixed Temperature Values (Per Climate Unit)
 
