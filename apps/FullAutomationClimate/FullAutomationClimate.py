@@ -765,20 +765,22 @@ class FullAutomationClimate(hass.Hass):
         climate = self.climates[kwargs['climate_index']]
         climate_entity = climate['climate_entity']
         
-        if not climate_entity.startswith('climate.'):
-            return
+        # Update external temperature input for climate entities
+        if climate_entity.startswith('climate.'):
+            if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
+                try:
+                    temp_value = float(new)
+                    self.call_service("number/set_value", 
+                                    entity_id=climate['external_temperature_input'], 
+                                    value=temp_value)
+                    self.debug_log(f"Setting external temperature to {temp_value} for {climate['external_temperature_input']}")
+                except ValueError:
+                    self.error(f"Unable to convert temperature {new} to number for {climate_entity}")
+                except Exception as e:
+                    self.error(f"Error while updating external temperature for {climate_entity}: {str(e)}")
         
-        if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
-            try:
-                temp_value = float(new)
-                self.call_service("number/set_value", 
-                                entity_id=climate['external_temperature_input'], 
-                                value=temp_value)
-                self.debug_log(f"Setting external temperature to {temp_value} for {climate['external_temperature_input']}")
-            except ValueError:
-                self.error(f"Unable to convert temperature {new} to number for {climate_entity}")
-            except Exception as e:
-                self.error(f"Error while updating external temperature for {climate_entity}: {str(e)}")
+        # Always update climate state when external temperature changes
+        self.set_climate(kwargs['climate_index'])
 
     def callback_occupancy(self, entity, attribute, old, new, kwargs):
         """
@@ -816,14 +818,12 @@ class FullAutomationClimate(hass.Hass):
             # Control entity
             if climate['occupancy'] and not is_opening and not should_turn_off_temp:
                 if current_state != EntityState.ON.value:
-                    self.log(f"Turning on {climate_entity}")
                     self.call_service(f"{climate_entity.split('.')[0]}/turn_on", entity_id=climate_entity)
-                    self.debug_log("Set to ON")
+                    self.debug_log(f"Turning on {climate_entity}")
             else:
                 if current_state != EntityState.OFF.value:
-                    self.log(f"Turning off {climate_entity}")
                     self.call_service(f"{climate_entity.split('.')[0]}/turn_off", entity_id=climate_entity)
-                    self.debug_log("Set to OFF")
+                    self.debug_log(f"Turning off {climate_entity}")
         except Exception as e:
             self.error(f"Error while handling non-climate entity {climate_entity}: {str(e)}")
 
