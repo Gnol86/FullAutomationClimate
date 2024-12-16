@@ -77,13 +77,11 @@ climates:
 
       # Temperature Settings
       external_temperature_entity: sensor.living_room_temp
-      external_temperature_input: number.living_room_temp_input
-      heating_limit_entity: input_number.living_room_heating_limit
-      occupied_heating_setpoint_entity: input_number.living_room_occupied_temp
-      away_heating_setpoint_entity: input_number.living_room_away_temp
-      occupied_heating_setpoint: 21
-      away_heating_setpoint: 17
-      off_heating_setpoint: 7
+      external_temperature_input: number.living_room_temp_input # Method 1: Direct external temperature input
+      # OR
+      temperature_calibration_entity: number.living_room_calibration # Method 2: Temperature calibration
+
+      # ... other settings ...
 
       # Sensors
       occupancy_entity: binary_sensor.living_room_presence
@@ -95,6 +93,24 @@ climates:
       opening_delay_open: 300
       opening_delay_close: 15
 ```
+
+### Temperature Management Methods
+
+The system supports two methods for managing external temperature in climate entities:
+
+#### 1. Direct External Temperature Input
+
+Uses `external_temperature_input` to directly set the external temperature in the climate device.
+
+#### 2. Temperature Calibration
+
+Uses `temperature_calibration_entity` to automatically adjust the temperature offset of the climate device to match the external temperature sensor.
+
+This method:
+
+-   Continuously monitors both the device's internal temperature and external temperature sensor
+-   Automatically calculates and applies the necessary calibration
+-   Maintains temperature accuracy even with device sensor drift
 
 ### Configuration Parameters
 
@@ -113,16 +129,17 @@ climates:
 
 #### Per Climate Unit Parameters
 
-| Parameter                          | Type   | Required  | Default | Description                                                                                                   |
-| ---------------------------------- | ------ | --------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| `climate_entity`                   | string | Yes       | -       | Climate entity or switch to control                                                                           |
-| `external_temperature_entity`      | string | No        | -       | Temperature sensor for the room                                                                               |
-| `external_temperature_input`       | string | Special\* | -       | Input entity for external temperature (\*Required if using external_temperature_entity with climate entities) |
-| `heating_limit_entity`             | string | No        | -       | Individual heating limit entity                                                                               |
-| `occupied_heating_setpoint_entity` | string | No        | -       | Entity for occupied temperature setpoint                                                                      |
-| `away_heating_setpoint_entity`     | string | No        | -       | Entity for away temperature setpoint                                                                          |
-| `occupancy_entity`                 | string | No        | -       | Presence detection sensor                                                                                     |
-| `opening_entity`                   | string | No        | -       | Window/door sensor                                                                                            |
+| Parameter                          | Type   | Required  | Default | Description                                                                                |
+| ---------------------------------- | ------ | --------- | ------- | ------------------------------------------------------------------------------------------ |
+| `climate_entity`                   | string | Yes       | -       | Climate entity or switch to control                                                        |
+| `external_temperature_entity`      | string | No        | -       | Temperature sensor for the room                                                            |
+| `external_temperature_input`       | string | Special\* | -       | Input entity for external temperature (\*Required if using Method 1 with climate entities) |
+| `temperature_calibration_entity`   | string | Special\* | -       | Entity for temperature calibration (\*Required if using Method 2 with climate entities)    |
+| `heating_limit_entity`             | string | No        | -       | Individual heating limit entity                                                            |
+| `occupied_heating_setpoint_entity` | string | No        | -       | Entity for occupied temperature setpoint                                                   |
+| `away_heating_setpoint_entity`     | string | No        | -       | Entity for away temperature setpoint                                                       |
+| `occupancy_entity`                 | string | No        | -       | Presence detection sensor                                                                  |
+| `opening_entity`                   | string | No        | -       | Window/door sensor                                                                         |
 
 #### Fixed Temperature Values (Per Climate Unit)
 

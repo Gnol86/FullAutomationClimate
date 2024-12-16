@@ -5,67 +5,6 @@ FullAutomationClimate - Automated Climate Control for Home Assistant
 This module provides automated climate control functionality for Home Assistant,
 integrating with various sensors and conditions to optimize heating/cooling.
 
-Features:
----------
-- Automatic temperature control based on room occupancy
-- Window/door opening detection and response
-- External temperature monitoring and limits
-- Weather forecast integration
-- Support for multiple climate units
-- Configurable delays and temperature setpoints
-- Support for both climate entities and generic on/off devices
-
-Requirements:
-------------
-- Home Assistant with AppDaemon
-- Compatible climate devices
-- Optional: occupancy sensors, door/window sensors, temperature sensors
-
-Configuration:
--------------
-Example configuration in apps.yaml:
-```yaml
-climate_automation:
-  module: FullAutomationClimate
-  class: FullAutomationClimate
-  debug: false  # Optional: Enable debug logging
-  climates:
-    - climate_entity: climate.living_room
-      occupancy_entity: binary_sensor.living_room_occupancy
-      opening_entity: binary_sensor.living_room_window
-      external_temperature_entity: sensor.outdoor_temperature
-      heating_limit: 19
-      to_occupied_delay: 10  # Optional: Delay in seconds
-      to_inoccupied_delay: 10  # Optional: Delay in seconds
-      opening_delay_open: 300  # Optional: Delay in seconds
-      opening_delay_close: 15  # Optional: Delay in seconds
-      occupied_heating_setpoint: 21  # Optional: Temperature in °C
-      away_heating_setpoint: 17  # Optional: Temperature in °C
-      off_heating_setpoint: 7  # Optional: Temperature in °C
-```
-
-Technical Details:
------------------
-The module implements a hierarchical configuration system:
-1. Local entity values take precedence
-2. Local fixed values are used if no entity exists
-3. Global values are used as fallback
-4. Default constants are used if no other values are available
-
-The system supports:
-- Multiple climate units with independent configurations
-- Automatic mode switching based on occupancy
-- Temperature adjustments based on external conditions
-- Configurable delays to prevent rapid switching
-- Extensive error handling and logging
-
-Error Handling:
---------------
-- All entity interactions are wrapped in try-except blocks
-- Invalid configurations are logged with detailed error messages
-- Missing entities are gracefully handled with fallback values
-- Temperature conversion errors are caught and logged
-
 Author: @gnol86
 License: MIT
 Repository: https://github.com/Gnol86/FullAutomationClimate
@@ -264,6 +203,8 @@ class ClimateConfig(TypedDict):
     occupancy_entity: Optional[str]
     opening_entity: Optional[str]
     external_temperature_entity: Optional[str]
+    external_temperature_input: Optional[str]
+    temperature_calibration_entity: Optional[str]
     heating_limit: Optional[float]
 
 class ClimateConstants:
@@ -692,10 +633,7 @@ class FullAutomationClimate(hass.Hass):
     def _setup_temperature(self, climate: Dict[str, Any], climate_index: int) -> None:
         """Configure external temperature for a climate unit."""
         # Check if external_temperature_entity exists
-        has_external_temp = 'external_temperature_entity' in climate
-        has_external_input = 'external_temperature_input' in climate
-
-        if not has_external_temp:
+        if 'external_temperature_entity' not in climate:
             return
 
         # Validate existence of external temperature entity
@@ -705,12 +643,28 @@ class FullAutomationClimate(hass.Hass):
 
         # For climate entities only
         if climate['climate_entity'].startswith('climate.'):
-            if not has_external_input:
-                self.error(f"external_temperature_input must be defined for climate entities: {climate['climate_entity']} if external_temperature_entity is defined")
+            # Check if we have either external_temperature_input or temperature_calibration_entity
+            has_temp_input = 'external_temperature_input' in climate
+            has_temp_calibration = 'temperature_calibration_entity' in climate
+
+            if not (has_temp_input or has_temp_calibration):
+                self.error(f"Either external_temperature_input or temperature_calibration_entity must be defined for climate entities: {climate['climate_entity']} if external_temperature_entity is defined")
                 return
-            if not self.entity_exists(climate['external_temperature_input']):
+
+            if has_temp_input and not self.entity_exists(climate['external_temperature_input']):
                 self.error(f"Entity external_temperature_input {climate['external_temperature_input']} does not exist")
                 return
+
+            if has_temp_calibration and not self.entity_exists(climate['temperature_calibration_entity']):
+                self.error(f"Entity temperature_calibration_entity {climate['temperature_calibration_entity']} does not exist")
+                return
+
+            # Si nous avons une entité de calibration, on écoute aussi les changements de température du périphérique
+            if has_temp_calibration:
+                self.listen_state(self.callback_device_temperature, 
+                                climate['climate_entity'], 
+                                attribute='current_temperature',
+                                climate_index=climate_index)
 
         self.debug_log(f"  Init external temperature : {climate['external_temperature_entity']}")
         try:
@@ -765,15 +719,33 @@ class FullAutomationClimate(hass.Hass):
         climate = self.climates[kwargs['climate_index']]
         climate_entity = climate['climate_entity']
         
-        # Update external temperature input for climate entities
+        # Update external temperature for climate entities
         if climate_entity.startswith('climate.'):
             if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
                 try:
                     temp_value = float(new)
-                    self.call_service("number/set_value", 
-                                    entity_id=climate['external_temperature_input'], 
-                                    value=temp_value)
-                    self.debug_log(f"Setting external temperature to {temp_value} for {climate['external_temperature_input']}")
+                    
+                    # Si nous avons une entité de calibration
+                    if 'temperature_calibration_entity' in climate:
+                        current_temp = self.get_state(climate_entity, attribute='current_temperature')
+                        current_calibration = self.get_state(climate['temperature_calibration_entity'])
+                        
+                        if current_temp not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value] and \
+                           current_calibration not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
+                            self._update_temperature_calibration(
+                                climate,
+                                temp_value,
+                                float(current_temp),
+                                float(current_calibration)
+                            )
+                    
+                    # Si nous avons une entité d'entrée de température externe
+                    elif 'external_temperature_input' in climate:
+                        self.call_service("number/set_value", 
+                                        entity_id=climate['external_temperature_input'], 
+                                        value=temp_value)
+                        self.debug_log(f"Setting external temperature to {temp_value} for {climate['external_temperature_input']}")
+                        
                 except ValueError:
                     self.error(f"Unable to convert temperature {new} to number for {climate_entity}")
                 except Exception as e:
@@ -963,3 +935,55 @@ class FullAutomationClimate(hass.Hass):
         except (ValueError, TypeError):
             self.error(f"Invalid temperature: {temp}")
             return None
+
+    def _update_temperature_calibration(self, climate: Dict[str, Any], external_temp: float, device_temp: float, current_calibration: float) -> None:
+        """
+        Met à jour la calibration de température si nécessaire.
+        
+        Args:
+            climate: Configuration du climat
+            external_temp: Température externe
+            device_temp: Température du périphérique
+            current_calibration: Calibration actuelle
+        """
+        
+        # Si la température du périphérique est égale à la température externe, on ne met pas à jour la calibration
+        if device_temp == external_temp:
+            return
+        
+        # Calculer la nouvelle calibration
+        new_calibration = round(external_temp - (device_temp - current_calibration), 1)  # Arrondi 1 chiffre après la virgule
+        
+        self.call_service("number/set_value", 
+                        entity_id=climate['temperature_calibration_entity'], 
+                        value=new_calibration)
+        self.debug_log(f"Updating temperature calibration from {current_calibration} to {new_calibration} for {climate['temperature_calibration_entity']} (device temp: {device_temp}, external temp: {external_temp})")
+
+    def callback_device_temperature(self, entity, attribute, old, new, kwargs):
+        """Callback pour les changements de température du périphérique"""
+        climate = self.climates[kwargs['climate_index']]
+        
+        # Vérifier si nous utilisons la calibration
+        if not 'temperature_calibration_entity' in climate:
+            return
+        
+        self.debug_log(f"Callback device temperature: {new}")
+        try:
+            if new not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
+                device_temp = float(new)
+                # Récupérer la température externe actuelle et la calibration
+                external_temp = self.get_state(climate['external_temperature_entity'])
+                current_calibration = self.get_state(climate['temperature_calibration_entity'])
+                
+                if external_temp not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value] and \
+                   current_calibration not in [EntityState.UNKNOWN.value, EntityState.UNAVAILABLE.value]:
+                    self._update_temperature_calibration(
+                        climate,
+                        float(external_temp),
+                        device_temp,
+                        float(current_calibration)
+                    )
+        except ValueError:
+            self.error(f"Unable to convert temperature {new} to number for {entity}")
+        except Exception as e:
+            self.error(f"Error while updating temperature calibration for {entity}: {str(e)}")
